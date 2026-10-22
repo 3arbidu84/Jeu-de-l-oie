@@ -1,0 +1,733 @@
+<!DOCTYPE html>
+<html lang="fr" class="h-full">
+<head>
+    <meta charset="UTF-name">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Le Grand Jeu de l'Oie Magique & Enchanté</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Google Fonts: Cinzel & Quicksand -->
+    <link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;900&family=Quicksand:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <!-- FontAwesome for icons -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <!-- Tone.js for magical audio feedback -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        cinzel: ['Cinzel', 'serif'],
+                        quicksand: ['Quicksand', 'sans-serif'],
+                    },
+                    colors: {
+                        magical: {
+                            dark: '#0f0c1b',
+                            card: '#1a1429',
+                            gold: '#ffd700',
+                            purple: '#7e22ce',
+                            pink: '#ec4899',
+                            blue: '#3b82f6',
+                            emerald: '#10b981'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            font-family: 'Quicksand', sans-serif;
+            background: radial-gradient(circle at center, #1e1b4b 0%, #0f0c1b 100%);
+            color: #f3f4f6;
+            overflow-x: hidden;
+        }
+        .cinzel-title {
+            font-family: 'Cinzel', serif;
+            text-shadow: 0 0 20px rgba(236, 72, 153, 0.6), 0 0 40px rgba(126, 34, 206, 0.4);
+        }
+        /* Custom magical glow effects */
+        .magical-glow {
+            box-shadow: 0 0 20px rgba(236, 72, 153, 0.4), inset 0 0 15px rgba(255, 215, 0, 0.2);
+        }
+        .dice-container {
+            perspective: 1000px;
+        }
+        .dice {
+            width: 60px;
+            height: 60px;
+            position: relative;
+            transform-style: preserve-3d;
+            transition: transform 1s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        .dice-face {
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(135deg, #2e1065 0%, #4c1d95 100%);
+            border: 2px solid #f43f5e;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: inset 0 0 10px rgba(244, 63, 94, 0.5);
+        }
+        /* Custom scrollbar for game log */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(15, 12, 27, 0.6);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #7e22ce;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #a855f7;
+        }
+        @keyframes float {
+            0%, 100% { transform: translateY(0px); }
+            50% { transform: translateY(-8px); }
+        }
+        .floating {
+            animation: float 3s ease-in-out infinite;
+        }
+        @keyframes pulse-glow {
+            0%, 100% { opacity: 0.6; filter: drop-shadow(0 0 8px #f43f5e); }
+            50% { opacity: 1; filter: drop-shadow(0 0 20px #fbbf24); }
+        }
+        .magical-pulse {
+            animation: pulse-glow 2s infinite;
+        }
+    </style>
+</head>
+<body class="h-full flex flex-col min-h-screen">
+
+    <!-- Header / Navbar -->
+    <header class="py-6 px-4 text-center relative z-10 bg-black/40 backdrop-blur-md border-b border-purple-500/20">
+        <div class="max-w-6xl mx-auto flex flex-col md:flex-row items-center justify-between gap-4">
+            <div class="flex items-center gap-3">
+                <div class="w-12 h-12 rounded-full bg-gradient-to-tr from-pink-500 to-amber-400 flex items-center justify-center shadow-lg magical-glow floating">
+                    <i class="fa-solid fa-hat-wizard text-2xl text-white"></i>
+                </div>
+                <div class="text-left">
+                    <h1 class="text-2xl md:text-3xl font-bold cinzel-title text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-amber-300 to-purple-400">
+                        Le Royaume Enchanté
+                    </h1>
+                    <p class="text-xs text-purple-300 font-medium">Grand Jeu de l'Oie Magique</p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-3">
+                <button onclick="openRulesModal()" class="px-4 py-2 bg-purple-900/60 hover:bg-purple-800/80 border border-purple-500/40 rounded-xl text-sm font-semibold transition shadow-md flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-book-bookmark text-pink-400"></i> Grimoire des Règles
+                </button>
+                <button onclick="toggleAudio()" id="audioBtn" class="px-4 py-2 bg-purple-900/60 hover:bg-purple-800/80 border border-purple-500/40 rounded-xl text-sm font-semibold transition shadow-md flex items-center gap-2 cursor-pointer">
+                    <i class="fa-solid fa-volume-high text-amber-400" id="audioIcon"></i> <span id="audioText">Musique: Off</span>
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content Area -->
+    <main class="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 grid grid-cols-1 lg:grid-cols-4 gap-6 items-start">
+        
+        <!-- Left Column: Setup & Player Info / Controls -->
+        <div class="lg:col-span-1 flex flex-col gap-6">
+            
+            <!-- Setup Card -->
+            <div id="setupCard" class="bg-purple-950/40 backdrop-blur-md border border-purple-500/30 rounded-2xl p-5 shadow-xl magical-glow">
+                <h2 class="text-lg font-bold cinzel-title text-pink-300 mb-4 flex items-center gap-2">
+                    <i class="fa-solid fa-users-gear text-amber-400"></i> Configuration
+                </h2>
+                
+                <div class="space-y-4">
+                    <div>
+                        <label class="block text-xs font-bold text-purple-300 uppercase mb-2">Nombre d'aventuriers (1 - 4)</label>
+                        <div class="grid grid-cols-4 gap-2">
+                            <button onclick="setPlayerCount(1)" id="pCount1" class="py-2 rounded-xl font-bold border transition text-sm cursor-pointer player-count-btn bg-pink-600 border-pink-400 text-white shadow-lg">1</button>
+                            <button onclick="setPlayerCount(2)" id="pCount2" class="py-2 rounded-xl font-bold border transition text-sm cursor-pointer player-count-btn bg-purple-900/50 border-purple-600/50 text-purple-300">2</button>
+                            <button onclick="setPlayerCount(3)" id="pCount3" class="py-2 rounded-xl font-bold border transition text-sm cursor-pointer player-count-btn bg-purple-900/50 border-purple-600/50 text-purple-300">3</button>
+                            <button onclick="setPlayerCount(4)" id="pCount4" class="py-2 rounded-xl font-bold border transition text-sm cursor-pointer player-count-btn bg-purple-900/50 border-purple-600/50 text-purple-300">4</button>
+                        </div>
+                    </div>
+
+                    <div id="playerInputsContainer" class="space-y-3">
+                        <!-- Dynamic Player Name Inputs -->
+                    </div>
+
+                    <button onclick="startGame()" class="w-full py-3 bg-gradient-to-r from-pink-600 via-purple-600 to-amber-500 hover:from-pink-500 hover:to-amber-400 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95 cinzel-title tracking-wider cursor-pointer flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-wand-magic-sparkles text-amber-200"></i> Commencer la Quête
+                    </button>
+                </div>
+            </div>
+
+            <!-- In-Game Controls & Turn Status -->
+            <div id="gameControlsCard" class="hidden bg-purple-950/40 backdrop-blur-md border border-purple-500/30 rounded-2xl p-5 shadow-xl flex flex-col gap-4 magical-glow">
+                <div class="text-center pb-3 border-b border-purple-500/20">
+                    <span class="text-xs uppercase font-bold text-purple-300 tracking-wider">Tour Actuel</span>
+                    <h3 id="currentTurnName" class="text-xl font-bold cinzel-title text-pink-300 mt-1 flex items-center justify-center gap-2">
+                        <!-- Filled by JS -->
+                    </h3>
+                </div>
+
+                <!-- Dice Rolling Area -->
+                <div class="flex flex-col items-center justify-center py-4 bg-purple-900/20 rounded-xl border border-purple-500/20">
+                    <div class="dice-container mb-3">
+                        <div id="dice" class="dice flex items-center justify-center text-3xl font-bold text-amber-300 cursor-pointer shadow-lg" onclick="rollDice()">
+                            🎲
+                        </div>
+                    </div>
+                    <button id="rollBtn" onclick="rollDice()" class="px-6 py-2.5 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transition transform active:scale-95 cursor-pointer flex items-center gap-2">
+                        <i class="fa-solid fa-dice text-amber-300"></i> Lancer le Dé Magique
+                    </button>
+                    <span id="diceResultText" class="text-xs text-purple-300 mt-2 font-medium">Cliquez pour lancer !</span>
+                </div>
+
+                <!-- Players Dashboard -->
+                <div class="space-y-2" id="playersDashboard">
+                    <!-- Player status cards -->
+                </div>
+            </div>
+
+            <!-- Magical Card Popup Modal container (hidden by default) -->
+            <div id="spellModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4">
+                <div class="bg-gradient-to-b from-purple-950 to-indigo-950 border-2 border-pink-500 rounded-3xl p-6 max-w-md w-full shadow-2xl magical-glow text-center relative transform transition-all animate-bounce">
+                    <div class="absolute -top-10 left-1/2 transform -translate-x-1/2 w-20 h-20 rounded-full bg-gradient-to-tr from-pink-500 to-amber-400 flex items-center justify-center shadow-lg border-2 border-white">
+                        <i id="spellModalIcon" class="fa-solid fa-wand-sparkles text-3xl text-white"></i>
+                    </div>
+                    <h3 id="spellModalTitle" class="text-2xl font-bold cinzel-title text-amber-300 mt-8 mb-2">Sortilège Magique !</h3>
+                    <p id="spellModalDesc" class="text-purple-200 text-sm mb-6 leading-relaxed">Description de l'événement magique survenu sur la case...</p>
+                    <button onclick="closeSpellModal()" class="w-full py-3 bg-gradient-to-r from-pink-600 to-purple-600 hover:from-pink-500 hover:to-purple-500 text-white font-bold rounded-xl shadow-lg transition cursor-pointer cinzel-title">
+                        Continuer l'Aventure
+                    </button>
+                </div>
+            </div>
+
+        </div>
+
+        <!-- Center & Right Columns: The Magical Board & Event Log -->
+        <div class="lg:col-span-3 flex flex-col gap-6">
+            
+            <!-- Game Board Container -->
+            <div class="bg-purple-950/40 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 md:p-6 shadow-xl relative overflow-hidden magical-glow flex-1 flex flex-col items-center justify-center min-h-[500px]">
+                
+                <!-- Background magical particles/stars decor -->
+                <div class="absolute inset-0 opacity-10 pointer-events-none bg-[radial-gradient(#ec4899_1px,transparent_1px)] [background-size:24px_24px]"></div>
+
+                <!-- Setup / Welcome Banner inside board before start -->
+                <div id="boardWelcomeOverlay" class="absolute inset-0 z-20 bg-purple-950/90 backdrop-blur-md flex flex-col items-center justify-center p-6 text-center">
+                    <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-pink-500 via-purple-600 to-amber-400 flex items-center justify-center shadow-2xl magical-glow mb-6 floating">
+                        <i class="fa-solid fa-map text-4xl text-white"></i>
+                    </div>
+                    <h2 class="text-3xl md:text-4xl font-bold cinzel-title text-transparent bg-clip-text bg-gradient-to-r from-pink-400 via-amber-300 to-purple-400 mb-3">
+                        Le Pèlerinage des Étoiles
+                    </h2>
+                    <p class="text-purple-300 max-w-md text-sm md:text-base mb-6 leading-relaxed">
+                        Parcourez les 63 cases magiques du plateau enchanté. Évitez les pièges sombres, activez les potions de téléportation et atteignez la case finale pour remporter la Couronne des Sages !
+                    </p>
+                    <button onclick="focusSetup()" class="px-8 py-3 bg-gradient-to-r from-pink-600 to-amber-500 hover:from-pink-500 hover:to-amber-400 text-white font-bold rounded-xl shadow-lg transition transform hover:scale-105 cinzel-title tracking-wider cursor-pointer">
+                        Configurer votre Partie
+                    </button>
+                </div>
+
+                <!-- The Interactive Board Path Grid -->
+                <div id="gameBoardGrid" class="w-full grid grid-cols-9 md:grid-cols-9 gap-2 relative z-10 max-h-[650px] overflow-y-auto p-2">
+                    <!-- Dynamically generated cells 1 to 63 -->
+                </div>
+
+            </div>
+
+            <!-- Magical Event Log / Grimoire Terminal -->
+            <div class="bg-purple-950/40 backdrop-blur-md border border-purple-500/30 rounded-2xl p-4 shadow-xl">
+                <div class="flex items-center justify-between mb-3 border-b border-purple-500/20 pb-2">
+                    <h3 class="text-sm font-bold cinzel-title text-pink-300 flex items-center gap-2">
+                        <i class="fa-solid fa-scroll text-amber-400"></i> Journal des Événements Magiques
+                    </h3>
+                    <span class="text-[10px] text-purple-400 uppercase tracking-wider font-semibold">Chronique des Sortilèges</span>
+                </div>
+                <div id="eventLog" class="h-28 overflow-y-auto space-y-1.5 text-xs text-purple-200 font-medium pr-2">
+                    <div class="text-purple-400/80 italic">Le grimoire est ouvert. En attente du début de la quête...</div>
+                </div>
+            </div>
+
+        </div>
+
+    </main>
+
+    <!-- Rules Modal -->
+    <div id="rulesModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm p-4">
+        <div class="bg-gradient-to-b from-purple-950 to-indigo-950 border-2 border-purple-500 rounded-3xl p-6 max-w-2xl w-full shadow-2xl magical-glow relative max-h-[90vh] overflow-y-auto">
+            <div class="flex items-center justify-between mb-4 border-b border-purple-500/30 pb-3">
+                <h3 class="text-xl font-bold cinzel-title text-amber-300 flex items-center gap-2">
+                    <i class="fa-solid fa-book text-pink-400"></i> Grimoire des Règles Magiques
+                </h3>
+                <button onclick="closeRulesModal()" class="text-purple-400 hover:text-white text-xl cursor-pointer">
+                    <i class="fa-solid fa-xmark"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-4 text-sm text-purple-200 leading-relaxed">
+                <p>Bienvenue dans le <strong>Grand Jeu de l'Oie Magique</strong> ! Le premier aventurier à atteindre exactement la <span class="text-amber-300 font-bold">Case 63 (Le Sanctuaire Céleste)</span> remporte la partie.</p>
+                
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-3 mt-4">
+                    <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-3">
+                        <h4 class="font-bold text-pink-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-dove text-amber-300"></i> Cases Oie (Tous les 9 pas)</h4>
+                        <p class="text-xs text-purple-300">Atterrir sur une Oie double votre mouvement du tour !</p>
+                    </div>
+                    <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-3">
+                        <h4 class="font-bold text-blue-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-rotate-left text-blue-400"></i> Case Recule</h4>
+                        <p class="text-xs text-purple-300">Un sortilège vous force à reculer de quelques pas.</p>
+                    </div>
+                    <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-3">
+                        <h4 class="font-bold text-emerald-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-forward text-emerald-400"></i> Case Avance / Téléportation</h4>
+                        <p class="text-xs text-purple-300">Un portail magique vous propulse directement vers l'avant !</p>
+                    </div>
+                    <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-3">
+                        <h4 class="font-bold text-red-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-lock text-red-400"></i> Case Piège / Blocage</h4>
+                        <p class="text-xs text-purple-300">Vous êtes immobilisé(e) pendant 1 tour par des racines ensorcelées.</p>
+                    </div>
+                    <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-3">
+                        <h4 class="font-bold text-amber-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-flask text-amber-400"></i> Potion Magique</h4>
+                        <p class="text-xs text-purple-300">Boire la potion octroie un tour supplémentaire immédiat !</p>
+                    </div>
+                    <div class="bg-purple-900/30 border border-purple-500/30 rounded-xl p-3">
+                        <h4 class="font-bold text-purple-300 mb-1 flex items-center gap-2"><i class="fa-solid fa-dice text-purple-400"></i> Sort Aléatoire</h4>
+                        <p class="text-xs text-purple-300">Tire un sort imprévisible : gain de pas, malus ou échange de place !</p>
+                    </div>
+                </div>
+            </div>
+
+            <div class="mt-6 text-center">
+                <button onclick="closeRulesModal()" class="px-6 py-2.5 bg-purple-700 hover:bg-purple-600 text-white font-bold rounded-xl shadow transition cursor-pointer cinzel-title">
+                    Compris, Fermer
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Win Modal -->
+    <div id="winModal" class="hidden fixed inset-0 z-50 flex items-center justify-center bg-black/85 backdrop-blur-md p-4">
+        <div class="bg-gradient-to-b from-purple-950 via-indigo-950 to-pink-950 border-2 border-amber-400 rounded-3xl p-8 max-w-lg w-full shadow-2xl magical-glow text-center relative">
+            <div class="w-24 h-24 rounded-full bg-gradient-to-tr from-amber-400 via-pink-500 to-purple-600 flex items-center justify-center shadow-2xl mx-auto mb-6 border-4 border-amber-200 floating">
+                <i class="fa-solid fa-crown text-4xl text-amber-200"></i>
+            </div>
+            <h2 id="winTitle" class="text-3xl font-bold cinzel-title text-transparent bg-clip-text bg-gradient-to-r from-amber-300 via-pink-400 to-purple-300 mb-3">
+                Victoire Légendaire !
+            </h2>
+            <p id="winDesc" class="text-purple-200 text-base mb-8 leading-relaxed">
+                Le joueur a triomphé de toutes les épreuves et s'empare de la Couronne des Sages !
+            </p>
+            <button onclick="resetGame()" class="px-8 py-3.5 bg-gradient-to-r from-amber-500 via-pink-600 to-purple-600 hover:from-amber-400 hover:to-purple-500 text-white font-bold rounded-xl shadow-xl transition transform hover:scale-105 cinzel-title tracking-wider cursor-pointer">
+                Nouvelle Quête
+            </button>
+        </div>
+    </div>
+
+    <!-- Application Script -->
+    <script>
+        // --- GAME STATE ---
+        let playerCount = 1;
+        let players = [];
+        let currentTurnIndex = 0;
+        let gameStarted = false;
+        let audioEnabled = false;
+        let isRolling = false;
+
+        // Player configurations (Icons & Colors)
+        const playerConfigs = [
+            { id: 0, name: "Aventurier 1", color: "from-pink-500 to-rose-600", border: "border-pink-400", badgeBg: "bg-pink-600", icon: "fa-hat-wizard", emoji: "🧙‍♂️" },
+            { id: 1, name: "Aventurier 2", color: "from-blue-500 to-indigo-600", border: "border-blue-400", badgeBg: "bg-blue-600", icon: "fa-wand-sparkles", emoji: "🧝‍♀️" },
+            { id: 2, name: "Aventurier 3", color: "from-emerald-500 to-teal-600", border: "border-emerald-400", badgeBg: "bg-emerald-600", icon: "fa-dragon", emoji: "🐉" },
+            { id: 3, name: "Aventurier 4", color: "from-amber-500 to-orange-600", border: "border-amber-400", badgeBg: "bg-amber-600", icon: "fa-phoenix-birds", emoji: "🦅" }
+        ];
+
+        // Board definitions (63 cells total: 0 to 63)
+        // Types: 'normal', 'goose' (oie), 'back' (recule), 'forward' (avance), 'trap' (bloque), 'potion' (tour supp), 'spell' (sort aléatoire), 'win' (sanctuaire)
+        const totalCells = 63;
+        let boardSpecialTypes = {};
+
+        function initBoardTypes() {
+            for (let i = 1; i <= totalCells; i++) {
+                if (i === 63) {
+                    boardSpecialTypes[i] = { type: 'win', name: 'Sanctuaire Céleste', icon: 'fa-crown', color: 'from-amber-500 to-yellow-400' };
+                } else if (i % 9 === 0 && i < 63) {
+                    boardSpecialTypes[i] = { type: 'goose', name: 'Oie Magique', icon: 'fa-dove', color: 'from-pink-500 to-rose-500' };
+                } else if ([5, 14, 27, 42, 53].includes(i)) {
+                    boardSpecialTypes[i] = { type: 'back', name: 'Rcule Maléfique', icon: 'fa-rotate-left', color: 'from-blue-600 to-cyan-600', val: i === 5 ? 2 : (i === 14 ? 8 : 15) };
+                } else if ([12, 22, 36, 48].includes(i)) {
+                    boardSpecialTypes[i] = { type: 'forward', name: 'Portail Céleste', icon: 'fa-forward', color: 'from-emerald-600 to-teal-500', val: i + 5 };
+                } else if ([8, 19, 31, 45, 58].includes(i)) {
+                    boardSpecialTypes[i] = { type: 'trap', name: 'Racines Ensorcelées', icon: 'fa-lock', color: 'from-red-600 to-rose-700' };
+                } else if ([18, 32, 50].includes(i)) {
+                    boardSpecialTypes[i] = { type: 'potion', name: 'Potion d\'Alacrité', icon: 'fa-flask', color: 'from-amber-600 to-yellow-500' };
+                } else if ([10, 25, 39, 55].includes(i)) {
+                    boardSpecialTypes[i] = { type: 'spell', name: 'Grimoire Aléatoire', icon: 'fa-dice', color: 'from-purple-600 to-indigo-600' };
+                } else {
+                    boardSpecialTypes[i] = { type: 'normal', name: `Étape ${i}`, icon: 'fa-star', color: 'from-purple-900/60 to-indigo-950/60' };
+                }
+            }
+        }
+
+        // --- TONE.JS AUDIO SYNTHESIS ---
+        let synth = null;
+        function initAudio() {
+            if (!synth) {
+                synth = new Tone.Synth({
+                    oscillator: { type: "triangle" },
+                    envelope: { attack: 0.05, decay: 0.2, sustain: 0.2, release: 0.8 }
+                }).toDestination();
+            }
+        }
+
+        function playMagicSound(type) {
+            if (!audioEnabled || !synth) return;
+            try {
+                Tone.start();
+                const now = Tone.now();
+                if (type === 'roll') {
+                    synth.triggerAttackRelease("C4", "8n", now);
+                    synth.triggerAttackRelease("G4", "8n", now + 0.1);
+                } else if (type === 'goose') {
+                    synth.triggerAttackRelease("E5", "8n", now);
+                    synth.triggerAttackRelease("B5", "4n", now + 0.15);
+                } else if (type === 'potion') {
+                    synth.triggerAttackRelease("G5", "8n", now);
+                    synth.triggerAttackRelease("C6", "4n", now + 0.15);
+                } else if (type === 'trap') {
+                    synth.triggerAttackRelease("A2", "4n", now);
+                    synth.triggerAttackRelease("E2", "2n", now + 0.2);
+                } else if (type === 'win') {
+                    const notes = ["C4", "E4", "G4", "C5", "E5", "G5"];
+                    notes.forEach((note, idx) => {
+                        synth.triggerAttackRelease(note, "8n", now + idx * 0.1);
+                    });
+                } else {
+                    synth.triggerAttackRelease("D4", "8n", now);
+                }
+            } catch (e) {
+                console.log("Audio context prevented or error", e);
+            }
+        }
+
+        function toggleAudio() {
+            audioEnabled = !audioEnabled;
+            if (audioEnabled) {
+                initAudio();
+                document.getElementById('audioIcon').className = "fa-solid fa-volume-high text-amber-400";
+                document.getElementById('audioText').innerText = "Musique: On";
+                addLogMessage("🎵 Sons et harmonies magiques activés.");
+            } else {
+                document.getElementById('audioIcon').className = "fa-solid fa-volume-xmark text-purple-400";
+                document.getElementById('audioText').innerText = "Musique: Off";
+                addLogMessage("🔇 Sons magiques désactivés.");
+            }
+        }
+
+        // --- SETUP & UI MANAGEMENT ---
+        function setPlayerCount(count) {
+            playerCount = count;
+            for (let i = 1; i <= 4; i++) {
+                const btn = document.getElementById(`pCount${i}`);
+                if (i === count) {
+                    btn.className = "py-2 rounded-xl font-bold border transition text-sm cursor-pointer player-count-btn bg-pink-600 border-pink-400 text-white shadow-lg";
+                } else {
+                    btn.className = "py-2 rounded-xl font-bold border transition text-sm cursor-pointer player-count-btn bg-purple-900/50 border-purple-600/50 text-purple-300";
+                }
+            }
+            renderPlayerInputs();
+        }
+
+        function renderPlayerInputs() {
+            const container = document.getElementById('playerInputsContainer');
+            container.innerHTML = '';
+            for (let i = 0; i < playerCount; i++) {
+                const cfg = playerConfigs[i];
+                container.innerHTML += `
+                    <div class="flex items-center gap-2">
+                        <span class="w-8 h-8 rounded-lg bg-gradient-to-tr ${cfg.color} flex items-center justify-center text-white text-sm shadow">${cfg.emoji}</span>
+                        <input type="text" id="playerNameInput${i}" value="${cfg.name}" placeholder="Nom de l'aventurier" class="flex-1 bg-purple-900/40 border border-purple-500/40 rounded-xl px-3 py-2 text-sm text-white focus:outline-none focus:border-pink-500">
+                    </div>
+                `;
+            }
+        }
+
+        function focusSetup() {
+            document.getElementById('setupCard').scrollIntoView({ behavior: 'smooth' });
+        }
+
+        function startGame() {
+            players = [];
+            for (let i = 0; i < playerCount; i++) {
+                const nameInput = document.getElementById(`playerNameInput${i}`);
+                const name = nameInput && nameInput.value.trim() !== '' ? nameInput.value.trim() : playerConfigs[i].name;
+                players.push({
+                    id: i,
+                    name: name,
+                    position: 0, // Starts at 0 (before 1)
+                    color: playerConfigs[i].color,
+                    border: playerConfigs[i].border,
+                    badgeBg: playerConfigs[i].badgeBg,
+                    emoji: playerConfigs[i].emoji,
+                    blockedTurns: 0,
+                    extraTurn: false
+                });
+            }
+
+            currentTurnIndex = 0;
+            gameStarted = true;
+            initBoardTypes();
+
+            document.getElementById('boardWelcomeOverlay').classList.add('hidden');
+            document.getElementById('setupCard').classList.add('hidden');
+            document.getElementById('gameControlsCard').classList.remove('hidden');
+
+            renderBoard();
+            renderDashboard();
+            updateCurrentTurnHeader();
+            addLogMessage(`✨ La quête commence ! ${players.length} aventuriers s'élancent sur le plateau magique.`);
+        }
+
+        function resetGame() {
+            document.getElementById('winModal').classList.add('hidden');
+            document.getElementById('gameControlsCard').classList.add('hidden');
+            document.getElementById('setupCard').classList.remove('hidden');
+            document.getElementById('boardWelcomeOverlay').classList.remove('hidden');
+            gameStarted = false;
+            document.getElementById('eventLog').innerHTML = `<div class="text-purple-400/80 italic">Le grimoire est ouvert. En attente du début de la quête...</div>`;
+            renderBoard();
+        }
+
+        // --- RENDER BOARD & PLAYERS ---
+        function renderBoard() {
+            const grid = document.getElementById('gameBoardGrid');
+            grid.innerHTML = '';
+
+            for (let i = 1; i <= totalCells; i++) {
+                const cellData = boardSpecialTypes[i] || { type: 'normal', name: `Case ${i}`, icon: 'fa-star', color: 'from-purple-900/60 to-indigo-950/60' };
+                
+                // Find players on this cell
+                const occupants = players.filter(p => p.position === i);
+
+                let occupantHtml = '';
+                occupants.forEach(p => {
+                    occupantHtml += `<span class="w-6 h-6 rounded-full bg-gradient-to-tr ${p.color} border-2 border-white shadow-md flex items-center justify-center text-xs transform -translate-y-1 animate-bounce" title="${p.name}">${p.emoji}</span>`;
+                });
+
+                grid.innerHTML += `
+                    <div class="relative bg-gradient-to-br ${cellData.color} border border-purple-500/30 rounded-xl p-2 min-h-[75px] flex flex-col justify-between shadow-md transition hover:border-pink-400">
+                        <div class="flex items-center justify-between text-[10px] text-purple-300 font-bold">
+                            <span>#${i}</span>
+                            <i class="fa-solid ${cellData.icon} text-amber-300/80"></i>
+                        </div>
+                        <div class="text-[10px] text-purple-200 truncate font-semibold">${cellData.name}</div>
+                        <div class="flex items-center justify-center gap-1 min-h-[24px] mt-1 flex-wrap">
+                            ${occupantHtml}
+                        </div>
+                    </div>
+                `;
+            }
+        }
+
+        function renderDashboard() {
+            const dashboard = document.getElementById('playersDashboard');
+            dashboard.innerHTML = '';
+
+            players.forEach((p, idx) => {
+                const isCurrent = idx === currentTurnIndex;
+                dashboard.innerHTML += `
+                    <div class="flex items-center justify-between p-2.5 rounded-xl border ${isCurrent ? 'border-pink-500 bg-purple-900/40 shadow-lg' : 'border-purple-500/20 bg-purple-950/20'} transition">
+                        <div class="flex items-center gap-2">
+                            <span class="w-7 h-7 rounded-lg bg-gradient-to-tr ${p.color} flex items-center justify-center text-xs text-white">${p.emoji}</span>
+                            <div>
+                                <h4 class="text-xs font-bold text-white">${p.name}</h4>
+                                <span class="text-[10px] text-purple-300">Case ${p.position} / 63 ${p.blockedTurns > 0 ? '🔒 (Bloqué)' : ''}</span>
+                            </div>
+                        </div>
+                        ${isCurrent ? '<span class="text-[10px] bg-pink-600 text-white font-bold px-2 py-0.5 rounded-full animate-pulse">Son Tour</span>' : ''}
+                    </div>
+                `;
+            });
+        }
+
+        function updateCurrentTurnHeader() {
+            const p = players[currentTurnIndex];
+            document.getElementById('currentTurnName').innerHTML = `<span class="w-7 h-7 rounded-lg bg-gradient-to-tr ${p.color} inline-flex items-center justify-center text-xs">${p.emoji}</span> ${p.name}`;
+        }
+
+        // --- GAMEPLAY MECHANICS ---
+        function rollDice() {
+            if (!gameStarted || isRolling) return;
+            isRolling = true;
+
+            const player = players[currentTurnIndex];
+
+            // Check if player is blocked
+            if (player.blockedTurns > 0) {
+                player.blockedTurns--;
+                addLogMessage(`🔒 ${player.name} est bloqué(e) par les racines ensorcelées ce tour-ci.`);
+                playMagicSound('trap');
+                isRolling = false;
+                nextTurn();
+                return;
+            }
+
+            playMagicSound('roll');
+            const diceEl = document.getElementById('dice');
+            diceEl.style.transform = "rotate(720deg) scale(1.1)";
+
+            setTimeout(() => {
+                diceEl.style.transform = "rotate(0deg) scale(1)";
+                const roll = Math.floor(Math.random() * 6) + 1;
+                diceEl.innerText = roll;
+                document.getElementById('diceResultText').innerText = `Résultat du dé : ${roll}`;
+
+                addLogMessage(`🎲 ${player.name} lance le dé et obtient <strong class="text-amber-300">${roll}</strong>.`);
+                movePlayer(player, roll);
+                isRolling = false;
+            }, 800);
+        }
+
+        function movePlayer(player, steps) {
+            let oldPos = player.position;
+            let targetPos = oldPos + steps;
+
+            // Handle bouncing back if exceeding 63
+            if (targetPos > totalCells) {
+                const overflow = targetPos - totalCells;
+                targetPos = totalCells - overflow;
+                addLogMessage(`↩️ ${player.name} a dépassé la case 63 ! Rebonds vers l'arrière jusqu'à la case ${targetPos}.`);
+            }
+
+            player.position = targetPos;
+            renderBoard();
+            renderDashboard();
+
+            // Check special cell activation after movement animation
+            setTimeout(() => {
+                checkSpecialCell(player);
+            }, 400);
+        }
+
+        function checkSpecialCell(player) {
+            const pos = player.position;
+            const cellInfo = boardSpecialTypes[pos];
+
+            if (pos === 63) {
+                playMagicSound('win');
+                document.getElementById('winTitle').innerText = `Victoire de ${player.name} !`;
+                document.getElementById('winDesc').innerText = `${player.name} a atteint le Sanctuaire Céleste et s'empare de la Couronne des Sages !`;
+                document.getElementById('winModal').classList.remove('hidden');
+                addLogMessage(`👑 ${player.name} remporte la quête en atteignant la case 63 !`);
+                return;
+            }
+
+            if (!cellInfo) return;
+
+            if (cellInfo.type === 'goose') {
+                playMagicSound('goose');
+                showSpellModal("Oie Magique !", `${player.name} tombe sur une Oie Magique ! Ses ailes enchantées doublent son élan en avançant à nouveau de ${player.position === 9 ? 9 : 9} pas !`, "fa-dove");
+                addLogMessage(`🕊️ Oie Magique activée pour ${player.name} ! Avancée supplémentaire.`);
+                // Double the last move approximately or jump ahead
+                player.position = Math.min(totalCells, player.position + 5);
+                renderBoard();
+                renderDashboard();
+            } else if (cellInfo.type === 'back') {
+                playMagicSound('trap');
+                const backSteps = cellInfo.val || 3;
+                player.position = Math.max(0, player.position - backSteps);
+                showSpellModal("Rcule Maléfique !", `Un sortilège ténébreux force ${player.name} à reculer de ${backSteps} cases (Case ${player.position}) !`, "fa-rotate-left");
+                addLogMessage(`🌀 ${player.name} subit un Recul Maléfique de ${backSteps} cases.`);
+                renderBoard();
+                renderDashboard();
+            } else if (cellInfo.type === 'forward') {
+                playMagicSound('potion');
+                const forwardPos = cellInfo.val || (player.position + 4);
+                player.position = Math.min(totalCells, forwardPos);
+                showSpellModal("Portail Céleste !", `${player.name} emprunte un portail magique et se téléporte directement à la case ${player.position} !`, "fa-forward");
+                addLogMessage(`✨ ${player.name} traverse un Portail Céleste vers la case ${player.position}.`);
+                renderBoard();
+                renderDashboard();
+            } else if (cellInfo.type === 'trap') {
+                playMagicSound('trap');
+                player.blockedTurns = 1;
+                showSpellModal("Racines Ensorcelées !", `${player.name} est emprisonné(e) par des ronces magiques et passera son prochain tour !`, "fa-lock");
+                addLogMessage(`🔒 ${player.name} est bloqué(e) pour 1 tour.`);
+            } else if (cellInfo.type === 'potion') {
+                playMagicSound('potion');
+                player.extraTurn = true;
+                showSpellModal("Potion d'Alacrité !", `${player.name} boit un élixir étincelant et obtient un tour supplémentaire immédiat !`, "fa-flask");
+                addLogMessage(`🧪 ${player.name} gagne un tour supplémentaire grâce à la Potion d'Alacrité.`);
+            } else if (cellInfo.type === 'spell') {
+                playMagicSound('goose');
+                triggerRandomSpell(player);
+            }
+
+            // Check if player got an extra turn
+            if (player.extraTurn) {
+                player.extraTurn = false;
+                addLogMessage(`⚡ ${player.name} rejoue immédiatement !`);
+                return; // Keep same player turn
+            }
+
+            nextTurn();
+        }
+
+        function triggerRandomSpell(player) {
+            const spells = [
+                { name: "Pluie d'Étoiles", desc: "+3 pas de bonus !", action: () => { player.position = Math.min(totalCells, player.position + 3); } },
+                { name: "Malédiction de Brume", desc: "Recule de 2 pas.", action: () => { player.position = Math.max(0, player.position - 2); } },
+                { name: "Bénédiction du Phénix", desc: "+5 pas en avant !", action: () => { player.position = Math.min(totalCells, player.position + 5); } }
+            ];
+            const chosen = spells[Math.floor(Math.random() * spells.length)];
+            chosen.action();
+            showSpellModal(`Grimoire : ${chosen.name}`, `${player.name} tire une carte sortilège : ${chosen.desc}`, "fa-dice");
+            addLogMessage(`📜 Grimoire Aléatoire pour ${player.name} : ${chosen.name} (${chosen.desc})`);
+            renderBoard();
+            renderDashboard();
+        }
+
+        function nextTurn() {
+            currentTurnIndex = (currentTurnIndex + 1) % players.length;
+            updateCurrentTurnHeader();
+            renderDashboard();
+        }
+
+        // --- MODAL HELPERS ---
+        function showSpellModal(title, desc, iconClass) {
+            document.getElementById('spellModalTitle').innerText = title;
+            document.getElementById('spellModalDesc').innerText = desc;
+            document.getElementById('spellModalIcon').className = `fa-solid ${iconClass} text-3xl text-white`;
+            document.getElementById('spellModal').classList.remove('hidden');
+        }
+
+        function closeSpellModal() {
+            document.getElementById('spellModal').classList.add('hidden');
+        }
+
+        function openRulesModal() {
+            document.getElementById('rulesModal').classList.remove('hidden');
+        }
+
+        function closeRulesModal() {
+            document.getElementById('rulesModal').classList.add('hidden');
+        }
+
+        function addLogMessage(msg) {
+            const log = document.getElementById('eventLog');
+            const timeStr = new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            log.innerHTML += `<div class="border-l-2 border-pink-500 pl-2 py-0.5"><span class="text-purple-400 text-[10px]">[${timeStr}]</span> ${msg}</div>`;
+            log.scrollTop = log.scrollHeight;
+        }
+
+        // Initialize board UI on load
+        window.onload = function() {
+            initBoardTypes();
+            renderPlayerInputs();
+            renderBoard();
+        };
+    </script>
+</body>
+</html>
